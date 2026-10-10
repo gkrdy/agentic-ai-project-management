@@ -250,6 +250,7 @@ class EvaluationAgent:
             eval_prompt = (
                 f"Does the following answer: {response_from_worker}\n"
                 f"Meet this criteria: {self.evaluation_criteria} "  # TODO: 4 - Insert evaluation criteria here
+                f"Judge only whether the answer meets the criteria, not whether it is factually correct."
                 f"Respond Yes or No, and the reason why it does or doesn't meet the criteria."
             )
             response = client.chat.completions.create(
