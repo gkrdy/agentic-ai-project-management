@@ -17,6 +17,8 @@ with open("Product-Spec-Email-Router.txt","r") as file:
 
 # Action Planning Agent
 knowledge_action_planning = (
+    "You should return clean plan based on your knowledge in steps. "
+    "You have product manager, program manager and dev engineer agents"
     "Stories are defined from a product spec by identifying a "
     "persona, an action, and a desired outcome for each story. "
     "Each story represents a specific functionality of the product "
@@ -25,6 +27,10 @@ knowledge_action_planning = (
     "Tasks are defined for each story and represent the engineering "
     "work required to develop the product. \n"
     "A development Plan for a product contains all these components"
+     "To define the development tasks for a product, always return exactly these three steps, one per line, with no other text:\n"
+    "1. Define the user stories from the product spec\n"
+    "2. Define the product features by grouping the user stories\n"
+    "3. Define the development tasks for each user story"
 )
 # TODO: 4 - Instantiate an action_planning_agent using the 'knowledge_action_planning'
 action_planning_agent = ActionPlanningAgent(openai_api_key,knowledge_action_planning)
@@ -45,17 +51,14 @@ product_manager_knowledge_agent = KnowledgeAugmentedPromptAgent(openai_api_key,p
 # TODO: 7 - Define the persona and evaluation criteria for a Product Manager evaluation agent and instantiate it as product_manager_evaluation_agent. This agent will evaluate the product_manager_knowledge_agent.
 # The evaluation_criteria should specify the expected structure for user stories (e.g., "As a [type of user], I want [an action or feature] so that [benefit/value].").
 product_manager_evaluation_agent_persona="You are an evaluation agent that checks the answers of other worker agents"
-evaluation_criteria = f"""
-- The story should be of format specified: As a [type of user], I want [an action or feature] so that [benefit/value]."
-- The story should have acceptance criteria
-- The story should have action or feature which has completeness
-"""
+evaluation_criteria = "The answer should be stories that follow the following structure: As a [type of user], I want [an action or feature] so that [benefit/value]."
 
 product_manager_evaluation_agent =EvaluationAgent(openai_api_key,product_manager_evaluation_agent_persona,evaluation_criteria,product_manager_knowledge_agent,5)
 
 # Program Manager - Knowledge Augmented Prompt Agent
 persona_program_manager = "You are a Program Manager, you are responsible for defining the features for a product."
-knowledge_program_manager = "Features of a product are defined by organizing similar user stories into cohesive groups."
+knowledge_program_manager = f"""Features of a product are defined by organizing similar user stories into cohesive groups. 
+                       Product spec: {product_spec}"""
 # Instantiate a program_manager_knowledge_agent using 'persona_program_manager' and 'knowledge_program_manager'
 # (This is a necessary step before TODO 8. Students should add the instantiation code here.)
 program_manager_knowledge_agent= KnowledgeAugmentedPromptAgent(openai_api_key,persona_program_manager,knowledge_program_manager)
@@ -77,12 +80,13 @@ persona_program_manager_eval_criteria = f"""
 - "Key Functionality: The specific capabilities or actions the feature provides\n" \
 - "User Benefit: How this feature creates value for the user"
 """
-program_manager_evaluation_agent =EvaluationAgent(openai_api_key,persona_program_manager_eval,evaluation_criteria,program_manager_knowledge_agent,5)
+program_manager_evaluation_agent =EvaluationAgent(openai_api_key,persona_program_manager_eval,persona_program_manager_eval_criteria,program_manager_knowledge_agent,5)
 
 
 # Development Engineer - Knowledge Augmented Prompt Agent
 persona_dev_engineer = "You are a Development Engineer, you are responsible for defining the development tasks for a product."
-knowledge_dev_engineer = "Development tasks are defined by identifying what needs to be built to implement each user story."
+knowledge_dev_engineer = f"""Development tasks are defined by identifying what needs to be built to implement each user story.
+ Product spec: {product_spec}"""
 # Instantiate a development_engineer_knowledge_agent using 'persona_dev_engineer' and 'knowledge_dev_engineer'
 # (This is a necessary step before TODO 9. Students should add the instantiation code here.)
 development_engineer_knowledge_agent= KnowledgeAugmentedPromptAgent(openai_api_key,persona_dev_engineer,knowledge_dev_engineer)
@@ -118,17 +122,17 @@ routing_agent = RoutingAgent(openai_api_key, {})
 agents = [
     {
         "name": "Product Manager",
-        "description": "You are responsible for defining the user stories for a product",
+        "description": "Define the user stories from the product spec",
         "func": lambda x: product_manager_support_function(x)
     },
     {
         "name": "Program Manager",
-        "description": "You are responsible for defining the features for a product.",
+        "description": "Resposible for defining the features for a product by grouping related user stories",
         "func": lambda x: program_manager_support_function(x)
     },
     {
         "name": "Development Engineer",
-        "description": "You are responsible for defining the development tasks for a product.",
+        "description": "You are responsible for defining the development and engineering tasks for each user story.",
         "func" :lambda x: development_engineer_support_function(x)
     }
 ]
@@ -160,7 +164,7 @@ def development_engineer_support_function(query):
 print("\n*** Workflow execution started ***\n")
 # Workflow Prompt
 # ****
-workflow_prompt = "What would the development tasks for this product be?"
+workflow_prompt = f"What would the development tasks for this product be?"
 # ****
 print(f"Task to complete in this workflow, workflow prompt = {workflow_prompt}")
 
@@ -181,5 +185,8 @@ for i, step in enumerate(workflow_steps, start=1):
    result = routing_agent.route_to_agent(step)
    completed_steps.append(result)
    print(f"Result of step {i}:\n{result}")
-print(f"Final output:\n{completed_steps[-1]}")
+print("\n*** Workflow completed. All completed steps: ***")
+for i, step_result in enumerate(completed_steps, start=1):
+    print(f"\n--- Completed step {i} ---")
+    print(step_result)
 
