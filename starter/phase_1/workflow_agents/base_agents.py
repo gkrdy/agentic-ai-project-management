@@ -237,13 +237,11 @@ class EvaluationAgent:
         prompt_to_evaluate = initial_prompt
 
         for i in range(self.max_interactions):
-        # TODO: 2 - Set loop to iterate up to the maximum number of interactions:
             print(f"\n--- Interaction {i+1} ---")
 
             print(" Step 1: Worker agent generates a response to the prompt")
             print(f"Prompt:\n{prompt_to_evaluate}")
             response_from_worker = self.worker_agent.respond(prompt_to_evaluate) 
-            # TODO: 3 - Obtain a response from the worker agent
             print(f"Worker Agent Response:\n{response_from_worker}")
 
             print(" Step 2: Evaluator agent judges the response")
@@ -258,7 +256,6 @@ class EvaluationAgent:
                 messages=[{"role":"system", "content":self.persona},
                           {"role":"user", "content":eval_prompt}],
                 temperature=0
-                # TODO: 5 - Define the message structure sent to the LLM for evaluation (use temperature=0)
             )
             evaluation = response.choices[0].message.content.strip()
             print(f"Evaluator Agent Evaluation:\n{evaluation}")
@@ -277,7 +274,6 @@ class EvaluationAgent:
                     messages= [ 
                                 {"role":"user", "content":instruction_prompt}],
                     temperature=0
-                    # TODO: 6 - Define the message structure sent to the LLM to generate correction instructions (use temperature=0)
                 )
                 instructions = response.choices[0].message.content.strip()
                 print(f"Instructions to fix:\n{instructions}")
@@ -293,66 +289,65 @@ class EvaluationAgent:
             "final_response":response_from_worker,
             "evaluation":evaluation,
             "iterations":i+1
-            # TODO: 7 - Return a dictionary containing the final response, evaluation, and number of iterations
         }
 
 
-'''
+
 class RoutingAgent():
 
     def __init__(self, openai_api_key, agents):
         # Initialize the agent with given attributes
         self.openai_api_key = openai_api_key
-        # TODO: 1 - Define an attribute to hold the agents, call it agents
+        self.agents= agents
 
     def get_embedding(self, text):
-        client = OpenAI(api_key=self.openai_api_key)
-        # TODO: 2 - Write code to calculate the embedding of the text using the text-embedding-3-large model
-        # Extract and return the embedding vector from the response
+        client = OpenAI(base_url="https://openai.vocareum.com/v1", api_key=self.openai_api_key)
+        response = client.embeddings.create(
+            model="text-embedding-3-large",
+            input=text,
+            encoding_format="float"
+        )
         embedding = response.data[0].embedding
         return embedding 
-
-    # TODO: 3 - Define a method to route user prompts to the appropriate agent
-        # TODO: 4 - Compute the embedding of the user input prompt
-        input_emb = 
+    
+    def route_to_agent(self,user_prompt):    
+        input_emb = self.get_embedding(user_prompt)
         best_agent = None
         best_score = -1
 
         for agent in self.agents:
-            # TODO: 5 - Compute the embedding of the agent description
+            agent_emb = self.get_embedding(agent["description"])
             if agent_emb is None:
                 continue
 
             similarity = np.dot(input_emb, agent_emb) / (np.linalg.norm(input_emb) * np.linalg.norm(agent_emb))
             print(similarity)
-
-            # TODO: 6 - Add logic to select the best agent based on the similarity score between the user prompt and the agent descriptions
+            if(similarity > best_score):
+                best_agent = agent
+                best_score = similarity
 
         if best_agent is None:
             return "Sorry, no suitable agent could be selected."
 
         print(f"[Router] Best agent: {best_agent['name']} (score={best_score:.3f})")
-        return best_agent["func"](user_input)
+        return best_agent["func"](user_prompt)
 
-'''
 
-'''
 class ActionPlanningAgent:
 
     def __init__(self, openai_api_key, knowledge):
-        # TODO: 1 - Initialize the agent attributes here
+        self.openai_api_key=openai_api_key
+        self.knowledge=knowledge
 
     def extract_steps_from_prompt(self, prompt):
-
-        # TODO: 2 - Instantiate the OpenAI client using the provided API key
-        # TODO: 3 - Call the OpenAI API to get a response from the "gpt-3.5-turbo" model.
-        # Provide the following system prompt along with the user's prompt:
-        # "You are an action planning agent. Using your knowledge, you extract from the user prompt the steps requested to complete the action the user is asking for. You return the steps as a list. Only return the steps in your knowledge. Forget any previous context. This is your knowledge: {pass the knowledge here}"
-
-        response_text = ""  # TODO: 4 - Extract the response text from the OpenAI API response
-
-        # TODO: 5 - Clean and format the extracted steps by removing empty lines and unwanted text
-        steps = response_text.split("\n")
+        client = OpenAI(base_url="https://openai.vocareum.com/v1", api_key=self.openai_api_key)
+        response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role":"system", "content":f"You are an action planning agent. Using your knowledge, you extract from the user prompt the steps requested to complete the action the user is asking for. You return the steps as a list. Only return the steps in your knowledge. Forget any previous context. This is your knowledge: {self.knowledge}"},
+                          {"role":"user", "content":prompt}],
+                temperature=0
+            )
+        response_text = response.choices[0].message.content
+        steps = [line.strip() for line in response_text.split("\n") if line.strip()]
 
         return steps
-'''
