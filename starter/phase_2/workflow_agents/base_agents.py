@@ -168,6 +168,9 @@ class RAGKnowledgePromptAgent:
                 "end_char": end
             })
 
+            if end == len(text):
+                break
+
             start = end - self.chunk_overlap
             chunk_id += 1
 
