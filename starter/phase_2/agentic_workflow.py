@@ -41,6 +41,7 @@ knowledge_product_manager = (
     "Stories are defined by writing sentences with a persona, an action, and a desired outcome. "
     "The sentences always start with: As a "
     "Write several stories for the product spec below, where the personas are the different users of the product. "
+    "The answer should be stories that follow the following structure: As a [type of user], I want [an action or feature] so that [benefit/value]"
     f"{product_spec}"
     # TODO: 5 - Complete this knowledge string by appending the product_spec loaded in TODO 3
 )
@@ -108,16 +109,17 @@ persona_dev_engineer_eval = "You are an evaluation agent that checks the answers
 #                      "Estimated Effort: Time or complexity estimation\n" \
 #                      "Dependencies: Any tasks that must be completed first"
 # For the 'agent_to_evaluate' parameter, refer to the provided solution code's pattern.
-persona_dev_engineer_eval_criteria= f"""
+persona_dev_engineer_eval_criteria= (
                       "The answer should be tasks following this exact structure: " 
-                      "Task ID: A unique identifier for tracking purposes\n" 
+                      "Task ID: A unique identifier for tracking purposes.\n" 
                       "Task Title: Brief description of the specific development work\n" 
-                      "Related User Story: Reference to the parent user story not a feature\n" \
+                      "Related User Story: Reference to the parent user story not a feature\n" 
                       "Description: Detailed explanation of the technical work required\n" 
                       "Acceptance Criteria: Specific requirements that must be met for completion\n" 
                       "Estimated Effort: Time or complexity estimation\n" 
-                      "Dependencies: Any tasks that must be completed first"
-"""
+                      "Dependencies: Any tasks that must be completed first\n"
+                      "If every task contains all seven labels, the answer meets the criteria.")
+
 development_engineer_evaluation_agent =EvaluationAgent(openai_api_key,persona_dev_engineer_eval,persona_dev_engineer_eval_criteria,development_engineer_knowledge_agent,10)
 
 
